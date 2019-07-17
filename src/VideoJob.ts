@@ -55,6 +55,8 @@ export class VideoJob {
             this.createOutput('webm:1080p', '.webm', 'video/webm', FileModelType.Video),
             this.createOutput('webm:480p', '.webm', 'video/webm', FileModelType.Video),
             this.createOutput('webm:720p', '.webm', 'video/webm', FileModelType.Video),
+            this.createOutput('gif:500px', '.gif', 'image/gif', FileModelType.Image),
+            this.createOutput('storyboard:1200px', '.png', 'image/png', FileModelType.Image),
         ];
         const config = {
             api_key: process.env.COCONUT_API_KEY,
@@ -83,12 +85,12 @@ export class VideoJob {
     }
 
     private createOutput(format: string, extension: string, mimeType: string, fileType: FileModelType): VideoJobOutput {
-        const path = `${this.parentFile.id}/${uuid()}${extension}`;
+        const path = `${process.env.UGC_S3_COMPAT_BUCKET}/${this.parentFile.id}/${uuid()}${extension}`;
         return {
             fileType,
             format,
             mimeType,
-            remoteLocation: `${process.env.UGC_S3_COMPAT_CDN_BASE_URL}/${process.env.UGC_S3_COMPAT_BUCKET}/${path}`,
+            remoteLocation: `${process.env.UGC_S3_COMPAT_CDN_BASE_URL}/${path}`,
             s3Path: s3Path(path),
         };
     }
