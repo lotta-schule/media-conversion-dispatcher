@@ -14,7 +14,7 @@ const incomingQueueName = 'media-conversion-tasks';
 const outgoingQueueName = 'media-conversion-results';
 
 (async () => {
-    const connection = await connect('amqp://guest:guest@rabbitmq');
+    const connection = await connect(process.env.RABBITMQ_URL);
     console.log('created connection to rabbitMQ');
 
     const channel = await connection.createChannel();
