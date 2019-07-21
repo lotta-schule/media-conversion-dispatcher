@@ -26,7 +26,7 @@ ENV DIR=/usr/src/service
 WORKDIR $DIR
 
 # Copy files from build stage
-COPY --from=build /src/dist /src
+COPY --from=build /src /src
 
 WORKDIR /src
 
