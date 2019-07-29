@@ -3,6 +3,12 @@ try {
 } catch {
     console.warn('.env config failed.');
 }
+import { init as initSentry } from '@sentry/node';
+initSentry({
+    dsn: process.env.SENTRY_DSN,
+    enabled: process.env.RELEASE_LEVEL !== 'development',
+    environment: process.env.RELEASE_LEVEL || 'development',
+});
 import { connect } from 'amqplib';
 import dotenv from 'dotenv';
 import { AudioJob } from './AudioJob';
