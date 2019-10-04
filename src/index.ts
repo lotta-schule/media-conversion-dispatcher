@@ -1,22 +1,22 @@
 try {
-    dotenv.config();
+    // tslint:disable-next-line:no-var-requires
+    require('dotenv').config();
 } catch {
     console.warn('.env config failed.');
 }
-import { init as initSentry } from '@sentry/node';
-initSentry({
-    dsn: process.env.SENTRY_DSN,
-    enabled: process.env.RELEASE_LEVEL !== 'development',
-    environment: process.env.RELEASE_LEVEL || 'development',
-});
+if (process.env.HONEYBADGER_API_KEY) {
+    // tslint:disable-next-line:no-var-requires
+    const Honeybadger = require('honeybadger').configure({
+        apiKey: process.env.HONEYBADGER_API_KEY,
+        environment: process.env.APP_ENVIRONMENT
+    });
+}
 import { connect } from 'amqplib';
-import dotenv from 'dotenv';
 import { AudioJob } from './AudioJob';
 import { FileModel, FileModelType } from './model/FileModel';
 import { VideoJob } from './VideoJob';
 
 const incomingQueueName = 'media-conversion-tasks';
-// const outgoingExchange = 'media-conversion-results';
 const outgoingQueueName = 'media-conversion-results';
 
 (async () => {
