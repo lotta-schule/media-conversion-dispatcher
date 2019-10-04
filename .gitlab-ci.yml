@@ -1,0 +1,89 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  # set docker host to connect to docker in kubernetes
+  DOCKER_HOST: tcp://localhost:2375/
+  DOCKER_DRIVER: overlay2
+  # TODO: Set correct certs dir to /certs according to this article: https://about.gitlab.com/2019/07/31/docker-in-docker-with-docker-19-dot-03/
+  DOCKER_TLS_CERTDIR: ""
+
+cache:
+  key: "lotta-media-conversion-dispatcher-node-modules"
+  paths:
+    - node_modules/
+
+build docker image:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"auth\":\"$(echo -n "$DOCKER_HUB_USER:$DOCKER_HUB_PASSWORD" | base64)\"}}}" > /kaniko/.docker/config.json
+    - if [ $CI_COMMIT_REF_NAME == "develop" ];
+        then /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination lotta/media-conversion-dispatcher:$CI_COMMIT_SHA --destination lotta/media-conversion-dispatcher:staging;
+        elif [ $CI_COMMIT_REF_NAME == "master" ];
+        then /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination lotta/media-conversion-dispatcher:$CI_COMMIT_SHA --destination lotta/media-conversion-dispatcher:stable --destination lotta/media-conversion-dispatcher:latest;
+        else /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination lotta/media-conversion-dispatcher:$CI_COMMIT_SHA;
+        fi
+
+deploy:staging:
+  stage: deploy
+  environment:
+    name: staging
+  image:
+    name: lotta/do-helm-deploy:latest
+  script:
+    - /user/local/bin/setup.sh
+    - helm repo add lotta https://medienportal.gitlab.io/helm-charts
+    - helm repo update
+    - helm upgrade --install lotta-media-conversion-dispatcher-staging lotta/lotta-media-conversion-dispatcher
+      --namespace lotta-staging --wait
+      --set appEnvironment=staging
+      --set image.tag=${CI_COMMIT_SHA}
+      --set replicaCount=1
+      --set honeybadger.enabled=true
+      --set honeybadger.apiKey=$HONEYBADGER_API_KEY
+      --set coconut.apiKey=$COCONUT_API_KEY
+      --set rabbitmq.url=$RABBITMQ_URL
+      --set s3Compat.endpoint=$S3COMPAT_ENDPOINT
+      --set s3Compat.accessKeyId=$S3COMPAT_ACCESS_KEY_ID
+      --set s3Compat.secretAccessKey=$S3COMPAT_SECRET_ACCESS_KEY
+      --set s3Compat.bucket=$S3COMPAT_BUCKET
+      --set s3Compat.region=$S3COMPAT_REGION
+      --set s3Compat.cdnBaseUrl=$S3COMPAT_CDN_BASE_URL
+    - curl -g "https://api.honeybadger.io/v1/deploys?deploy[environment]=staging&deploy[repository]=$CI_REPOSITORY_URL&deploy[revision]=$CI_COMMIT_SHA&api_key=$HONEYBADGER_API_KEY"
+  only:
+    refs:
+      - develop
+
+deploy:production:
+  stage: deploy
+  environment:
+    name: production
+  image:
+    name: lotta/do-helm-deploy:latest
+  script:
+    - /user/local/bin/setup.sh
+    - helm repo add lotta https://medienportal.gitlab.io/helm-charts
+    - helm repo update
+    - helm upgrade --install lotta-media-conversion-dispatcher lotta/lotta-media-conversion-dispatcher
+      --namespace lotta --wait
+      --set appEnvironment=production
+      --set image.tag=${CI_COMMIT_SHA}
+      --set replicaCount=1
+      --set honeybadger.enabled=true
+      --set honeybadger.apiKey=$HONEYBADGER_API_KEY
+      --set coconut.apiKey=$COCONUT_API_KEY
+      --set rabbitmq.url=$RABBITMQ_URL
+      --set s3Compat.endpoint=$S3COMPAT_ENDPOINT
+      --set s3Compat.accessKeyId=$S3COMPAT_ACCESS_KEY_ID
+      --set s3Compat.secretAccessKey=$S3COMPAT_SECRET_ACCESS_KEY
+      --set s3Compat.bucket=$S3COMPAT_BUCKET
+      --set s3Compat.region=$S3COMPAT_REGION
+      --set s3Compat.cdnBaseUrl=$S3COMPAT_CDN_BASE_URL
+    - curl -g "https://api.honeybadger.io/v1/deploys?deploy[environment]=production&deploy[repository]=$CI_REPOSITORY_URL&deploy[revision]=$CI_COMMIT_SHA&api_key=$HONEYBADGER_API_KEY"
+  only:
+    refs:
+      - master
