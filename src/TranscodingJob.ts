@@ -57,6 +57,7 @@ export class TranscodingJob {
             source: this.parentFile.remote_location,
             webhook: 'https://app.coconut.co/tools/webhooks/58aee6d0/einsa',
         } as any;
+        console.log('config created:');
         console.log(config);
         const job = await coconut.createJob(config);
         this.jobId = job.id;
@@ -67,6 +68,7 @@ export class TranscodingJob {
     public async watch(): Promise<void> {
         const job = await coconut.getJob(this.jobId);
         if (job.status === 'completed') {
+            console.log('job completed: ', job);
             if (this.onComplete) {
                 await this.onComplete(this);
                 TranscodingJob.jobs = TranscodingJob.jobs.filter((j) => j.jobId !== job.id);
