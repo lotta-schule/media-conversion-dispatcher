@@ -1,4 +1,4 @@
-FROM node:12-alpine AS build
+FROM node:14-alpine AS build
 
 # build tools
 RUN apk add --update --no-cache \
@@ -17,7 +17,7 @@ RUN npm prune --production
 
 # Dockerfile continued
 
-FROM node:12-alpine
+FROM node:14-alpine
 
 # install curl for healthcheck
 # RUN apk add --update --no-cache curl
