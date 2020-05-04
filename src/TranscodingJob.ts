@@ -79,7 +79,7 @@ export class TranscodingJob {
                 TranscodingJob.jobs = TranscodingJob.jobs.filter((j) => j.jobId !== job.id);
             }
         } else {
-            setTimeout(this.watch.bind(this), 1000);
+            setTimeout(this.watch.bind(this), 30000);
         }
     }
 
