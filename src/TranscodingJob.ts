@@ -70,7 +70,7 @@ export class TranscodingJob {
         try {
             job = await coconut.getJob(this.jobId);
         } catch (e) {
-            console.error('Error getting job status: ', e);
+            console.error('Error getting job status for job ', this.jobId, ': ', e);
         }
         if (job?.status === 'completed') {
             console.log('job completed: ', job);
