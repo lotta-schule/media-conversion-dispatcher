@@ -21,7 +21,7 @@ build docker image:
     - docker:19.03.0-dind
   script:
     - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER" --password-stdin
-    - docker build lotta/media-conversion-dispatcher:$CI_COMMIT_SHA
+    - docker build -t lotta/media-conversion-dispatcher:$CI_COMMIT_SHA .
     - if [ $CI_COMMIT_REF_NAME == "production" ];
       then
         docker tag lotta/media-conversion-dispatcher:latest;
