@@ -32,6 +32,7 @@ const outgoingQueueName = 'media-conversion-results';
         incomingQueueName,
         async (incoming) => {
             console.log('got incoming: ', incoming);
+            console.log('incoming content: ', incoming.content.toString('utf8'));
             const file: FileModel = JSON.parse(incoming.content.toString('utf8'));
             if (file.file_type === FileModelType.Video) {
                 /**

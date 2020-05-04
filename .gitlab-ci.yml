@@ -72,7 +72,7 @@ deploy:production:
       --namespace lotta --wait
       --set appEnvironment=production
       --set image.tag=${CI_COMMIT_SHA}
-      --set replicaCount=2
+      --set replicaCount=1
       --set honeybadger.enabled=true
       --set honeybadger.apiKey=$HONEYBADGER_API_KEY
       --set coconut.apiKey=$COCONUT_API_KEY
