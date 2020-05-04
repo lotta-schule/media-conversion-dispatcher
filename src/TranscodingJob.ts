@@ -66,8 +66,13 @@ export class TranscodingJob {
     }
 
     public async watch(): Promise<void> {
-        const job = await coconut.getJob(this.jobId);
-        if (job.status === 'completed') {
+        let job: CoconutJob | null = null;
+        try {
+            job = await coconut.getJob(this.jobId);
+        } catch (e) {
+            console.error('Error getting job status: ', e);
+        }
+        if (job?.status === 'completed') {
             console.log('job completed: ', job);
             if (this.onComplete) {
                 await this.onComplete(this);
