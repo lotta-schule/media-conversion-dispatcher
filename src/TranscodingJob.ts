@@ -1,5 +1,5 @@
 import Coconut, { Job as CoconutJob } from '@ptitmouton/coconutjs';
-import uuid from 'uuid/v1';
+import { v1 as uuid } from 'uuid';
 import { FileModel, FileModelType } from './model/FileModel';
 
 const coconut = new Coconut();
