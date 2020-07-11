@@ -25,8 +25,8 @@ const outgoingQueueName = 'media-conversion-results';
 
     const channel = await connection.createChannel();
 
-    await channel.assertQueue(incomingQueueName);
-    await channel.assertQueue(outgoingQueueName, { durable: true });
+    await channel.checkQueue(incomingQueueName);
+    await channel.checkQueue(outgoingQueueName);
 
     await channel.consume(
         incomingQueueName,
