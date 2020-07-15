@@ -1,5 +1,5 @@
 import Coconut, { Job as CoconutJob } from '@ptitmouton/coconutjs';
-import uuid from 'uuid/v1';
+import { v1 as uuid } from 'uuid';
 import { FileModel, FileModelType } from './model/FileModel';
 
 const coconut = new Coconut();
@@ -22,6 +22,7 @@ export interface TranscodingJobOutput {
     remoteLocation: string;
     mimeType: string;
     fileType: FileModelType;
+    metadata?: any;
 }
 
 export class TranscodingJob {
@@ -39,6 +40,8 @@ export class TranscodingJob {
     public parentFile: FileModel;
 
     public outputs: TranscodingJobOutput[];
+
+    public metadata: any;
 
     private onComplete?: (job: TranscodingJob) => void | Promise<void>;
 
@@ -65,6 +68,14 @@ export class TranscodingJob {
         return job;
     }
 
+    public addMetadata(metadata: {[format: string]: any}): void {
+        this.outputs = this.outputs.map(output => ({
+            ...output,
+            metadata: (output.metadata || metadata[output.format]) ? { ...output.metadata, ...metadata[output.format] } : undefined
+        })),
+        this.metadata = metadata.source;
+    }
+
     public async watch(): Promise<void> {
         let job: CoconutJob | null = null;
         try {
@@ -74,10 +85,20 @@ export class TranscodingJob {
         }
         if (job?.status === 'completed') {
             console.log('job completed: ', job);
-            if (this.onComplete) {
-                await this.onComplete(this);
-                TranscodingJob.jobs = TranscodingJob.jobs.filter((j) => j.jobId !== job.id);
-            }
+            console.log('will fetch job infos now');
+            setTimeout(async () => {
+                try {
+                    const { metadata } = await coconut.getAllMetadata(this.jobId) as any;
+                    console.log('got metadata: ', metadata);
+                    this.addMetadata(metadata);
+                } catch (e) {
+                    console.error(e);
+                }
+                if (this.onComplete) {
+                    await this.onComplete(this);
+                    TranscodingJob.jobs = TranscodingJob.jobs.filter(j => j.jobId !== job.id);
+                }
+            }, 3000);
         } else {
             setTimeout(this.watch.bind(this), 30000);
         }
@@ -99,4 +120,5 @@ export class TranscodingJob {
     protected createOutputs(): TranscodingJobOutput[] {
         return [];
     }
+
 }

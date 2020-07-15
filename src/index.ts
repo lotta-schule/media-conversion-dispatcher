@@ -25,8 +25,8 @@ const outgoingQueueName = 'media-conversion-results';
 
     const channel = await connection.createChannel();
 
-    await channel.assertQueue(incomingQueueName);
-    await channel.assertQueue(outgoingQueueName, { durable: true });
+    await channel.checkQueue(incomingQueueName);
+    await channel.checkQueue(outgoingQueueName);
 
     await channel.consume(
         incomingQueueName,
@@ -38,11 +38,15 @@ const outgoingQueueName = 'media-conversion-results';
                 /**
                  * VIDEO JOB
                  */
-                const job = await VideoJob.create(file, (videoJob) => {
+                const startJobDate = new Date();
+                const job = await VideoJob.create(file, videoJob => {
+                    const finishJobDate = new Date();
                     console.log('job finished: ', videoJob);
                     const outgoing = Buffer.from(JSON.stringify({
                         outputs: videoJob.outputs,
                         parentFileId: file.id,
+                        metadata: job.metadata,
+                        processingDuration: (finishJobDate.getTime() - startJobDate.getTime()) / 1000
                     }));
                     channel.sendToQueue(outgoingQueueName, outgoing, { persistent: true });
                     channel.ack(incoming);
