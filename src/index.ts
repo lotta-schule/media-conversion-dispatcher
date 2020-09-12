@@ -26,13 +26,14 @@ const outgoingQueueName = 'media-conversion-results';
     const channel = await connection.createChannel();
 
     await channel.checkQueue(incomingQueueName);
-    await channel.checkQueue(outgoingQueueName);
 
     await channel.consume(
         incomingQueueName,
         async (incoming) => {
             console.log('got incoming: ', incoming);
             console.log('incoming content: ', incoming.content.toString('utf8'));
+            const prefix = incoming.fields.routingKey;
+
             const file: FileModel = JSON.parse(incoming.content.toString('utf8'));
             if (file.file_type === FileModelType.Video) {
                 /**
@@ -48,7 +49,7 @@ const outgoingQueueName = 'media-conversion-results';
                         metadata: job.metadata,
                         processingDuration: (finishJobDate.getTime() - startJobDate.getTime()) / 1000
                     }));
-                    channel.sendToQueue(outgoingQueueName, outgoing, { persistent: true });
+                    channel.sendToQueue(`${prefix}_${outgoingQueueName}`, outgoing, { persistent: true });
                     channel.ack(incoming);
                 });
                 job.startEncodingRequest();
