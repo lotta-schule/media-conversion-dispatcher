@@ -31,36 +31,36 @@ build docker image:
       then docker tag lotta/media-conversion-dispatcher:staging; fi
     - docker push lotta/media-conversion-dispatcher
 
-deploy:staging:
-  stage: deploy
-  environment:
-    name: staging
-  image:
-    name: lotta/do-helm-deploy:latest
-  script:
-    - /user/local/bin/setup.sh
-    - curl -i "https://sentry.io/api/0/organizations/$SENTRY_ORGANIZATION_SLUG/releases/" -X POST -H "Authorization:Bearer $SENTRY_API_TOKEN" -H 'Content-Type:application/json' -d "{ \"version\":\"media-conversion-dispatcher-$CI_COMMIT_SHA\", \"refs\":[{ \"repository\":\"
-       │ $CI_PROJECT_PATH\", \"commit\":\"$CI_COMMIT_SHA\", \"previousCommit\":\"$CI_COMMIT_BEFORE_SHA\" }], \"projects\":[\"media-conversion-dispatcher\"] }"
-    - helm repo add lotta https://medienportal.gitlab.io/helm-charts
-    - helm repo update
-    - helm upgrade --install lotta-media-conversion-dispatcher-staging lotta/lotta-media-conversion-dispatcher
-      --namespace lotta-staging --wait
-      --set appEnvironment=staging
-      --set image.tag=${CI_COMMIT_SHA}
-      --set replicaCount=1
-      --set sentry.dsn=$SENTRY_DSN
-      --set coconut.apiKey=$COCONUT_API_KEY
-      --set rabbitmq.url=$RABBITMQ_URL
-      --set s3Compat.endpoint=$S3COMPAT_ENDPOINT
-      --set s3Compat.accessKeyId=$S3COMPAT_ACCESS_KEY_ID
-      --set s3Compat.secretAccessKey=$S3COMPAT_SECRET_ACCESS_KEY
-      --set s3Compat.bucket=$S3COMPAT_BUCKET
-      --set s3Compat.region=$S3COMPAT_REGION
-      --set s3Compat.cdnBaseUrl=$S3COMPAT_CDN_BASE_URL
-    - curl -i "https://sentry.io/api/0/organizations/$SENTRY_ORGANIZATION_SLUG/releases/media-conversion-dispatcher-$CI_COMMIT_SHA/deploys/" -X POST -X POST -H 'Content-Type:application/json' -H "Authorization:Bearer $SENTRY_API_TOKEN" -d '{"environment":"staging"}'
-  only:
-    refs:
-      - develop
+      # deploy:staging:
+      #   stage: deploy
+      #   environment:
+      #     name: staging
+      #   image:
+      #     name: lotta/do-helm-deploy:latest
+      #   script:
+      #     - /user/local/bin/setup.sh
+      #     - curl -i "https://sentry.io/api/0/organizations/$SENTRY_ORGANIZATION_SLUG/releases/" -X POST -H "Authorization:Bearer $SENTRY_API_TOKEN" -H 'Content-Type:application/json' -d "{ \"version\":\"media-conversion-dispatcher-$CI_COMMIT_SHA\", \"refs\":[{ \"repository\":\"
+      #        │ $CI_PROJECT_PATH\", \"commit\":\"$CI_COMMIT_SHA\", \"previousCommit\":\"$CI_COMMIT_BEFORE_SHA\" }], \"projects\":[\"media-conversion-dispatcher\"] }"
+      #     - helm repo add lotta https://medienportal.gitlab.io/helm-charts
+      #     - helm repo update
+      #     - helm upgrade --install lotta-media-conversion-dispatcher-staging lotta/lotta-media-conversion-dispatcher
+      #       --namespace lotta-staging --wait
+      #       --set appEnvironment=staging
+      #       --set image.tag=${CI_COMMIT_SHA}
+      #       --set replicaCount=1
+      #       --set sentry.dsn=$SENTRY_DSN
+      #       --set coconut.apiKey=$COCONUT_API_KEY
+      #       --set rabbitmq.url=$RABBITMQ_URL
+      #       --set s3Compat.endpoint=$S3COMPAT_ENDPOINT
+      #       --set s3Compat.accessKeyId=$S3COMPAT_ACCESS_KEY_ID
+      #       --set s3Compat.secretAccessKey=$S3COMPAT_SECRET_ACCESS_KEY
+      #       --set s3Compat.bucket=$S3COMPAT_BUCKET
+      #       --set s3Compat.region=$S3COMPAT_REGION
+      #       --set s3Compat.cdnBaseUrl=$S3COMPAT_CDN_BASE_URL
+      #     - curl -i "https://sentry.io/api/0/organizations/$SENTRY_ORGANIZATION_SLUG/releases/media-conversion-dispatcher-$CI_COMMIT_SHA/deploys/" -X POST -X POST -H 'Content-Type:application/json' -H "Authorization:Bearer $SENTRY_API_TOKEN" -d '{"environment":"staging"}'
+      #   only:
+      #     refs:
+      #       - develop
 
 deploy:production:
   stage: deploy
