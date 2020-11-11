@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.8"
 
 networks:
   api_rabbitmq:
@@ -6,7 +6,7 @@ networks:
 
 services:
   app:
-    image: node:14
+    image: node:15
     working_dir: /usr/src/svc
     env_file: .env
     volumes:
