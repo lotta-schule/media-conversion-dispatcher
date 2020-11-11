@@ -9,6 +9,6 @@ declare namespace NodeJS {
         UGC_S3_COMPAT_SECRET_ACCESS_KEY: string;
         UGC_S3_COMPAT_BUCKET: string;
         UGC_S3_COMPAT_REGION: string;
-        HONEYBADGER_API_KEY?: string;
+        SENTRY_DSN?: string;
     }
 }

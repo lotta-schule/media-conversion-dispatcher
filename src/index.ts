@@ -4,10 +4,10 @@ try {
 } catch {
     console.warn('.env config failed.');
 }
-if (process.env.HONEYBADGER_API_KEY) {
-    // tslint:disable-next-line:no-var-requires
-    const Honeybadger = require('honeybadger').configure({
-        apiKey: process.env.HONEYBADGER_API_KEY,
+import { init  } from '@sentry/node';
+if (process.env.SENTRY_DSN) {
+    init({
+        dsn: process.env.SENTRY_DSN,
         environment: process.env.APP_ENVIRONMENT
     });
 }

@@ -10,8 +10,7 @@ ENV CI=true
 
 ADD . /src
 WORKDIR /src
-RUN npm install
-# RUN npm run test -- --no-watch
+RUN npm install --production=false
 RUN npm run build
 RUN npm prune --production
 
@@ -23,12 +22,14 @@ FROM node:14-alpine
 # RUN apk add --update --no-cache curl
 
 ENV DIR=/usr/src/service
+ENV NODE_ENV=production
 WORKDIR $DIR
 
 # Copy files from build stage
 COPY --from=build /src /src
 
 WORKDIR /src
+
 
 CMD ["npm", "start"]
 
