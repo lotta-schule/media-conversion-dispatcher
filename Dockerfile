@@ -6,7 +6,8 @@ RUN apk add --update --no-cache \
     make \
     g++
 
-ENV CI=true
+ENV NODE_ENV production
+ENV CI 1
 
 ADD . /src
 WORKDIR /src
@@ -16,7 +17,7 @@ RUN npm prune --production
 
 # Dockerfile continued
 
-FROM node:14-alpine
+FROM node:15-alpine
 
 # install curl for healthcheck
 # RUN apk add --update --no-cache curl
