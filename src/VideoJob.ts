@@ -3,8 +3,8 @@ import { TranscodingJob, TranscodingJobOutput } from './TranscodingJob';
 
 export class VideoJob extends TranscodingJob {
 
-    public static create(file: FileModel, onComplete?: (job: TranscodingJob) => void | Promise<void>): TranscodingJob {
-        const job = new VideoJob(file, onComplete);
+    public static create(file: FileModel, prefix: string, onComplete?: (job: TranscodingJob) => void | Promise<void>): TranscodingJob {
+        const job = new VideoJob(file, prefix, onComplete);
         this.jobs.push(job);
         return job;
     }

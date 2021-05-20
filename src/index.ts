@@ -40,7 +40,7 @@ const outgoingQueueName = 'media-conversion-results';
                  * VIDEO JOB
                  */
                 const startJobDate = new Date();
-                const job = VideoJob.create(file, videoJob => {
+                const job = VideoJob.create(file, prefix, videoJob => {
                     const finishJobDate = new Date();
                     console.log('job finished: ', videoJob);
                     const outgoing = Buffer.from(JSON.stringify({
@@ -57,7 +57,7 @@ const outgoingQueueName = 'media-conversion-results';
                 /**
                  * AUDIO JOB
                  */
-                const job = AudioJob.create(file, (audioJob) => {
+                const job = AudioJob.create(file, prefix, (audioJob) => {
                     console.log('job finished: ', audioJob);
                     const outgoing = Buffer.from(JSON.stringify({
                         outputs: audioJob.outputs,

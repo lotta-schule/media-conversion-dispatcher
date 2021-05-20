@@ -19,7 +19,11 @@ const s3Path = (objectPath: string) => [
 export interface TranscodingJobOutput {
     format: string;
     s3Path: string;
-    remoteLocation: string;
+    remoteStorage: {
+        endpoint: string;
+        bucket: string;
+        path: string;
+    };
     mimeType: string;
     fileType: FileModelType;
     metadata?: any;
@@ -29,11 +33,13 @@ export class TranscodingJob {
 
     public static jobs: TranscodingJob[] = [];
 
-    public static create(file: FileModel, onComplete?: (job: TranscodingJob) => void | Promise<void>): TranscodingJob {
-        const job = new TranscodingJob(file, onComplete);
+    public static create(file: FileModel, prefix: string, onComplete?: (job: TranscodingJob) => void | Promise<void>): TranscodingJob {
+        const job = new TranscodingJob(file, prefix, onComplete);
         this.jobs.push(job);
         return job;
     }
+
+    public prefix: string;
 
     public jobId: number;
 
@@ -45,8 +51,9 @@ export class TranscodingJob {
 
     private onComplete?: (job: TranscodingJob) => void | Promise<void>;
 
-    constructor(file: FileModel, onComplete?: (job: TranscodingJob) => void | Promise<void>) {
+    constructor(file: FileModel, prefix: string, onComplete?: (job: TranscodingJob) => void | Promise<void>) {
         this.parentFile = file;
+        this.prefix = prefix;
         this.onComplete = onComplete;
     }
 
@@ -107,13 +114,18 @@ export class TranscodingJob {
     protected createOutput(
         format: string, extension: string, mimeType: string, fileType: FileModelType
     ): TranscodingJobOutput {
-        const path = `${process.env.UGC_S3_COMPAT_BUCKET}/${this.parentFile.id}/${uuid()}${extension}`;
+        const path = `${this.parentFile.id}/${uuid()}${extension}`;
+        const bucket = process.env.UGC_S3_COMPAT_BUCKET;
         return {
             fileType,
             format,
             mimeType,
-            remoteLocation: `${process.env.UGC_S3_COMPAT_CDN_BASE_URL}/${path}`,
-            s3Path: s3Path(path),
+            remoteStorage: {
+                endpoint: process.env.UGC_S3_COMPAT_CDN_BASE_URL,
+                bucket,
+                path,
+            },
+            s3Path: s3Path(`${this.prefix}/${path}`),
         };
     }
 
