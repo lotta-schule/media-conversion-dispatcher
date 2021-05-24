@@ -49,7 +49,7 @@ deploy:production:
   environment:
     name: production
   image:
-    name: lotta/do-helm-deploy:latest
+    name: lotta/ionos-helm-deploy:latest
   script:
     - /user/local/bin/setup.sh
     - helm repo add lotta https://medienportal.gitlab.io/helm-charts
