@@ -4,11 +4,11 @@ try {
 } catch {
     console.warn('.env config failed.');
 }
-import { init  } from '@sentry/node';
+import { init } from '@sentry/node';
 if (process.env.SENTRY_DSN) {
     init({
         dsn: process.env.SENTRY_DSN,
-        environment: process.env.APP_ENVIRONMENT
+        environment: process.env.APP_ENVIRONMENT,
     });
 }
 import { connect } from 'amqplib';
@@ -31,25 +31,41 @@ const outgoingQueueName = 'media-conversion-results';
         incomingQueueName,
         async (incoming) => {
             console.log('got incoming: ', incoming);
-            console.log('incoming content: ', incoming.content.toString('utf8'));
+            console.log(
+                'incoming content: ',
+                incoming.content.toString('utf8')
+            );
             const prefix = incoming.fields.routingKey;
 
-            const file: FileModel = JSON.parse(incoming.content.toString('utf8'));
+            const file: FileModel = JSON.parse(
+                incoming.content.toString('utf8')
+            );
             if (file.file_type === FileModelType.Video) {
                 /**
                  * VIDEO JOB
                  */
                 const startJobDate = new Date();
-                const job = VideoJob.create(file, prefix, videoJob => {
+                const job = VideoJob.create(file, prefix, (videoJob) => {
                     const finishJobDate = new Date();
                     console.log('job finished: ', videoJob);
-                    const outgoing = Buffer.from(JSON.stringify({
-                        outputs: videoJob.outputs,
-                        parentFileId: file.id,
-                        metadata: job.metadata,
-                        processingDuration: (finishJobDate.getTime() - startJobDate.getTime()) / 1000
-                    }));
-                    channel.sendToQueue(`${prefix}_${outgoingQueueName}`, outgoing, { persistent: true });
+                    const outgoing = Buffer.from(
+                        JSON.stringify({
+                            outputs: videoJob.outputs,
+                            parentFileId: file.id,
+                            metadata: job.metadata,
+                            processingDuration:
+                                (finishJobDate.getTime() -
+                                    startJobDate.getTime()) /
+                                1000,
+                        })
+                    );
+                    channel.sendToQueue(
+                        `${prefix}_${outgoingQueueName}`,
+                        outgoing,
+                        {
+                            persistent: true,
+                        }
+                    );
                     channel.ack(incoming);
                 });
                 job.startEncodingRequest();
@@ -59,11 +75,19 @@ const outgoingQueueName = 'media-conversion-results';
                  */
                 const job = AudioJob.create(file, prefix, (audioJob) => {
                     console.log('job finished: ', audioJob);
-                    const outgoing = Buffer.from(JSON.stringify({
-                        outputs: audioJob.outputs,
-                        parentFileId: file.id,
-                    }));
-                    channel.sendToQueue(`${prefix}_${outgoingQueueName}`, outgoing, { persistent: true });
+                    const outgoing = Buffer.from(
+                        JSON.stringify({
+                            outputs: audioJob.outputs,
+                            parentFileId: file.id,
+                        })
+                    );
+                    channel.sendToQueue(
+                        `${prefix}_${outgoingQueueName}`,
+                        outgoing,
+                        {
+                            persistent: true,
+                        }
+                    );
                     channel.ack(incoming);
                 });
                 job.startEncodingRequest();
@@ -74,7 +98,7 @@ const outgoingQueueName = 'media-conversion-results';
         {
             // manual acknowledgment mode,
             // see https://www.rabbitmq.com/confirms.html for details
-            noAck: false
+            noAck: false,
         }
     );
 })();
