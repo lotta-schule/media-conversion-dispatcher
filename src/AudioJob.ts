@@ -2,8 +2,11 @@ import { FileModel, FileModelType } from './model/FileModel';
 import { TranscodingJob, TranscodingJobOutput } from './TranscodingJob';
 
 export class AudioJob extends TranscodingJob {
-
-    public static create(file: FileModel, prefix: string, onComplete?: (job: TranscodingJob) => void | Promise<void>): TranscodingJob {
+    public static create(
+        file: FileModel,
+        prefix: string,
+        onComplete?: (job: TranscodingJob) => void | Promise<void>
+    ): TranscodingJob {
         const job = new AudioJob(file, prefix, onComplete);
         this.jobs.push(job);
         return job;
@@ -16,5 +19,4 @@ export class AudioJob extends TranscodingJob {
             this.createOutput('wav', '.wav', 'audio/wav', FileModelType.Audio),
         ];
     }
-
 }
