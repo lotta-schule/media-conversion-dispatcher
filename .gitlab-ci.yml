@@ -49,10 +49,9 @@ deploy:production:
   environment:
     name: production
   image:
-    name: lotta/do-helm-deploy:latest
+    name: lotta/ionos-helm-deploy:latest
   script:
     - /user/local/bin/setup.sh
-    - curl -i "https://sentry.io/api/1/organizations/$SENTRY_ORGANIZATION_SLUG/releases/" -X POST -H "Authorization:Bearer $SENTRY_API_TOKEN" -H 'Content-Type:application/json' -d "{ \"version\":\"media-conversion-dispatcher-$CI_COMMIT_TAG\", \"refs\":[{ \"repository\":\"$CI_PROJECT_PATH\", \"commit\":\"$CI_COMMIT_TAG\" }], \"projects\":[\"media-conversion-dispatcher\"] }"
     - helm repo add lotta https://medienportal.gitlab.io/helm-charts
     - helm repo update
     - helm upgrade --install lotta-media-conversion-dispatcher lotta/lotta-media-conversion-dispatcher
@@ -69,6 +68,5 @@ deploy:production:
       --set s3Compat.bucket=$S3COMPAT_BUCKET
       --set s3Compat.region=$S3COMPAT_REGION
       --set s3Compat.cdnBaseUrl=$S3COMPAT_CDN_BASE_URL
-    - curl -i "https://sentry.io/api/0/organizations/$SENTRY_ORGANIZATION_SLUG/releases/media-conversion-dispatcher-$CI_COMMIT_TAG/deploys/" -X POST -X POST -H 'Content-Type:application/json' -H "Authorization:Bearer $SENTRY_API_TOKEN" -d '{"environment":"production"}'
   only:
     - tags
