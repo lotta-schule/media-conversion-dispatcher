@@ -85,7 +85,7 @@ deploy:production:
     - helm upgrade --install lotta-media-conversion-dispatcher lotta/lotta-media-conversion-dispatcher
       --namespace lotta --wait
       --set appEnvironment=production
-      --set image.tag=${CI_COMMIT_TAG}
+      --set image.tag=${CI_COMMIT_SHA}
       --set replicaCount=1
       --set sentry.dsn=$SENTRY_DSN
       --set coconut.apiKey=$COCONUT_API_KEY
