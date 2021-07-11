@@ -35,7 +35,7 @@ const outgoingQueueName = 'media-conversion-results';
                 'incoming content: ',
                 incoming.content.toString('utf8')
             );
-            const prefix = incoming.fields.routingKey;
+            const prefix = incoming.properties.headers.prefix;
 
             const file: FileModel = JSON.parse(
                 incoming.content.toString('utf8')
@@ -59,13 +59,12 @@ const outgoingQueueName = 'media-conversion-results';
                                 1000,
                         })
                     );
-                    channel.sendToQueue(
-                        `${prefix}_${outgoingQueueName}`,
-                        outgoing,
-                        {
-                            persistent: true,
-                        }
-                    );
+                    channel.sendToQueue(outgoingQueueName, outgoing, {
+                        persistent: true,
+                        headers: {
+                            prefix,
+                        },
+                    });
                     channel.ack(incoming);
                 });
                 job.startEncodingRequest();
@@ -81,13 +80,12 @@ const outgoingQueueName = 'media-conversion-results';
                             parentFileId: file.id,
                         })
                     );
-                    channel.sendToQueue(
-                        `${prefix}_${outgoingQueueName}`,
-                        outgoing,
-                        {
-                            persistent: true,
-                        }
-                    );
+                    channel.sendToQueue(outgoingQueueName, outgoing, {
+                        persistent: true,
+                        headers: {
+                            prefix,
+                        },
+                    });
                     channel.ack(incoming);
                 });
                 job.startEncodingRequest();

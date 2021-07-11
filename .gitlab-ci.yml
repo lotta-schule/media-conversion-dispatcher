@@ -44,6 +44,34 @@ build docker image:production:
   only:
     - tags
 
+deploy:staging:
+  stage: deploy
+  environment:
+    name: staging
+  image:
+    name: lotta/ionos-helm-deploy:latest
+  script:
+    - /user/local/bin/setup.sh
+    - helm repo add lotta https://medienportal.gitlab.io/helm-charts
+    - helm repo update
+    - helm upgrade --install lotta-media-conversion-dispatcher lotta/lotta-media-conversion-dispatcher
+      --namespace lotta-staging --wait
+      --set appEnvironment=production
+      --set image.tag=${CI_COMMIT_SHA}
+      --set replicaCount=1
+      --set sentry.dsn=$SENTRY_DSN
+      --set coconut.apiKey=$COCONUT_API_KEY
+      --set rabbitmq.url=$RABBITMQ_URL
+      --set s3Compat.endpoint=$S3COMPAT_ENDPOINT
+      --set s3Compat.accessKeyId=$S3COMPAT_ACCESS_KEY_ID
+      --set s3Compat.secretAccessKey=$S3COMPAT_SECRET_ACCESS_KEY
+      --set s3Compat.bucket=$S3COMPAT_BUCKET
+      --set s3Compat.region=$S3COMPAT_REGION
+      --set s3Compat.cdnBaseUrl=$S3COMPAT_CDN_BASE_URL
+  only:
+    refs:
+      - develop
+
 deploy:production:
   stage: deploy
   environment:
