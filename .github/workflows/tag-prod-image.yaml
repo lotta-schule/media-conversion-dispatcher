@@ -4,7 +4,7 @@ name: Tag production image
 on:
   push:
     tags:
-      - "*"
+      - '*'
 
 jobs:
   setup:
