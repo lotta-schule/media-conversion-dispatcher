@@ -135,7 +135,7 @@ export class TranscodingJob {
       format,
       mimeType,
       remoteStorage: {
-        endpoint: process.env.UGC_S3_COMPAT_CDN_BASE_URL,
+        endpoint: process.env.UGC_S3_COMPAT_ENDPOINT,
         bucket,
         path,
       },
