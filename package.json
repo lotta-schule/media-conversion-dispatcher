@@ -5,10 +5,9 @@
   "main": "index.js",
   "scripts": {
     "clean": "rimraf dist/*",
-    "tsc": "tsc",
     "lint": "eslint src --ext .ts",
-    "build": "npm-run-all clean lint tsc",
-    "dev:start": "npm-run-all build start",
+    "build": "npx tsc",
+    "dev:start": "npm-run-all clean lint build start",
     "dev": "nodemon --watch src -e ts,ejs --exec npm run dev:start",
     "start": "node dist/index",
     "prepare": "husky install"

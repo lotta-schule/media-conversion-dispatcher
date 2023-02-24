@@ -1,40 +1,34 @@
-FROM node:15-alpine AS build
+FROM node:19-alpine AS dependencies
+WORKDIR /app
 
-# build tools
-RUN apk add --update --no-cache \
-    python \
-    make \
-    g++
+COPY package.json package-lock.json ./
+
+RUN npm ci
+
+
+
+FROM node:19.0-alpine AS builder
+WORKDIR /app
+
+COPY . .
+COPY --from=dependencies /app/node_modules ./node_modules
+
+RUN npm run build
+
+
+
+FROM node:19.0-alpine AS runner
+WORKDIR /app
+
+RUN addgroup -g 1001 -S lotta
+RUN adduser -S lotta -u 1001
 
 ENV NODE_ENV production
-ENV CI 1
 
-ADD . /src
-WORKDIR /src
-RUN npm install --production=false
-RUN npm run build
-RUN npm prune --production
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
-# Dockerfile continued
-
-FROM node:15-alpine
-
-# install curl for healthcheck
-# RUN apk add --update --no-cache curl
-
-ENV DIR=/usr/src/service
-ENV NODE_ENV=production
-WORKDIR $DIR
-
-# Copy files from build stage
-COPY --from=build /src /src
-
-WORKDIR /src
-
+USER lotta
 
 CMD ["npm", "start"]
-
-# HEALTHCHECK --interval=5s \
-#     --timeout=5s \
-#     --retries=6 \
-#     CMD curl -fs http://localhost:80/_health || exit 1
