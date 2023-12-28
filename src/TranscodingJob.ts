@@ -105,17 +105,21 @@ export class TranscodingJob {
     return job;
   }
 
-  public addMetadata(metadata: { [format: string]: any }): void {
+  public addMetadata(metadata: {
+    outputs: { [format: string]: any };
+    input: { stream: any; format: any };
+  }): void {
+    console.log(metadata.outputs);
     this.outputs = Object.fromEntries(
       Object.entries(this.outputs).map(([format, output]) => ({
         ...output,
         metadata:
-          output.metadata || metadata[format]
-            ? { ...output.metadata, ...metadata[format] }
+          output.metadata || metadata.outputs[format]
+            ? { ...output.metadata, ...metadata.outputs[format] }
             : undefined,
       }))
     );
-    this.metadata = metadata.source;
+    this.metadata = metadata.input;
   }
 
   public async watch(): Promise<void> {
@@ -133,15 +137,24 @@ export class TranscodingJob {
     } catch (e) {
       console.error('Error getting job status for job ', this.jobId, ': ', e);
     }
-    console.log(job);
-    if (job?.status === 'completed') {
+
+    if (job?.status === 'job.completed') {
       console.log('job completed: ', job);
       console.log('will fetch job infos now');
       setTimeout(async () => {
         try {
-          const { metadata } = (await coconut.getAllMetadata(
-            this.jobId
-          )) as any;
+          const { metadata } = await new Promise<any>((resolve, reject) => {
+            coconut.Metadata.retrieve(
+              this.jobId,
+              (metadata: any, err: Error) => {
+                if (err) {
+                  reject(err);
+                } else {
+                  resolve(metadata);
+                }
+              }
+            );
+          });
           console.log('got metadata: ', metadata);
           this.addMetadata(metadata);
         } catch (e) {
@@ -154,7 +167,7 @@ export class TranscodingJob {
           );
         }
       }, 3000);
-    } else {
+    } else if (job?.status !== 'job.failed') {
       setTimeout(this.watch.bind(this), 30000);
     }
   }
