@@ -1,31 +1,34 @@
-import Coconut, { Job as CoconutJob } from '@ptitmouton/coconutjs';
+import Coconut from 'coconutjs';
 import { v1 as uuid } from 'uuid';
 import { FileModel, FileModelType } from './model/FileModel';
 
-const coconut = new Coconut();
+const coconut = new Coconut.Client(process.env.COCONUT_API_KEY);
 
-const s3Path = (objectPath: string) =>
-  [
-    's3://',
-    process.env.AWS_ACCESS_KEY_ID,
-    ':',
-    process.env.AWS_SECRET_ACCESS_KEY,
-    ,
-    '@',
-    process.env.AWS_S3_BUCKET,
-    '/',
-    objectPath,
-    `?host=https://${process.env.AWS_S3_ENDPOINT}&region=${process.env.AWS_S3_REGION}`,
-  ].join('');
+coconut.notification = {
+  type: 'http',
+  url: 'https://app.coconut.co/tools/webhooks/58aee6d0/einsa',
+};
 
-export interface TranscodingJobOutput {
-  format: string;
-  s3Path: string;
-  remoteStorage: { endpoint: string; bucket: string; path: string };
-  mimeType: string;
-  fileType: FileModelType;
-  metadata?: any;
-}
+coconut.storage = {
+  service: 's3other',
+  region: process.env.AWS_S3_REGION,
+  bucket: process.env.AWS_S3_BUCKET,
+  endpoint: process.env.AWS_S3_ENDPOINT,
+  credentials: {
+    access_key_id: process.env.AWS_ACCESS_KEY_ID,
+    secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+};
+
+export type TranscodingJobOutput = Record<
+  string,
+  {
+    path: string;
+    mimeType: string;
+    fileType: FileModelType;
+    metadata?: any;
+  }
+>;
 
 export class TranscodingJob {
   public static jobs: TranscodingJob[] = [];
@@ -40,13 +43,13 @@ export class TranscodingJob {
     return job;
   }
 
-  public prefix: string;
+  public prefix = '';
 
   public jobId: number;
 
   public parentFile: FileModel;
 
-  public outputs: TranscodingJobOutput[];
+  public outputs: Record<string, any>;
 
   public metadata: any;
 
@@ -58,46 +61,74 @@ export class TranscodingJob {
     onComplete?: (job: TranscodingJob) => void | Promise<void>
   ) {
     this.parentFile = file;
-    this.prefix = prefix;
+    this.prefix = prefix ?? '';
     this.onComplete = onComplete;
   }
 
-  public async startEncodingRequest(): Promise<CoconutJob> {
-    this.outputs = this.createOutputs();
-    const config = {
-      api_key: process.env.COCONUT_API_KEY,
-      outputs: this.outputs
-        .map((o) => [o.format, o.s3Path])
-        .reduce((obj, nextVal) => ({ ...obj, [nextVal[0]]: nextVal[1] }), {}),
-      source: this.parentFile.remote_location,
-      webhook: 'https://app.coconut.co/tools/webhooks/58aee6d0/einsa',
-    } as any;
-    console.log('config created:');
-    console.log(config);
-    const job = await coconut.createJob(config);
+  public async startEncodingRequest(): Promise<any> {
+    this.outputs = Object.fromEntries(this.createOutputs());
+    const log = <T>(value: T): T => {
+      console.log('THIS IS WHAT WE PASS: ', value);
+      return value;
+    };
+    const job = await new Promise<any>((resolve, reject) => {
+      coconut.Job.create(
+        log({
+          input: {
+            url: this.parentFile.remote_location,
+          },
+          outputs: Object.fromEntries(
+            Object.entries(this.outputs).map(([format, output]) => [
+              format,
+              { path: output.path },
+            ])
+          ),
+        }),
+        (job: any, err: Error) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(job);
+          }
+        }
+      );
+    });
+    console.log('job created:');
+    console.log(job);
     this.jobId = job.id;
     this.watch();
     return job;
   }
 
   public addMetadata(metadata: { [format: string]: any }): void {
-    (this.outputs = this.outputs.map((output) => ({
-      ...output,
-      metadata:
-        output.metadata || metadata[output.format]
-          ? { ...output.metadata, ...metadata[output.format] }
-          : undefined,
-    }))),
-      (this.metadata = metadata.source);
+    this.outputs = Object.fromEntries(
+      Object.entries(this.outputs).map(([format, output]) => ({
+        ...output,
+        metadata:
+          output.metadata || metadata[format]
+            ? { ...output.metadata, ...metadata[format] }
+            : undefined,
+      }))
+    );
+    this.metadata = metadata.source;
   }
 
   public async watch(): Promise<void> {
-    let job: CoconutJob | null = null;
+    let job: any | null = null;
     try {
-      job = await coconut.getJob(this.jobId);
+      job = await new Promise((resolve, reject) => {
+        coconut.Job.retrieve(this.jobId, (job: any, err: Error) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(job);
+          }
+        });
+      });
     } catch (e) {
       console.error('Error getting job status for job ', this.jobId, ': ', e);
     }
+    console.log(job);
     if (job?.status === 'completed') {
       console.log('job completed: ', job);
       console.log('will fetch job infos now');
@@ -128,23 +159,20 @@ export class TranscodingJob {
     extension: string,
     mimeType: string,
     fileType: FileModelType
-  ): TranscodingJobOutput {
+  ): any {
     const path = `${this.prefix}/${this.parentFile.id}/${uuid()}${extension}`;
-    const bucket = process.env.AWS_S3_BUCKET;
-    return {
-      fileType,
+
+    return [
       format,
-      mimeType,
-      remoteStorage: {
-        endpoint: process.env.AWS_S3_ENDPOINT,
-        bucket,
+      {
+        fileType,
+        mimeType,
         path,
       },
-      s3Path: s3Path(path),
-    };
+    ];
   }
 
-  protected createOutputs(): TranscodingJobOutput[] {
+  protected createOutputs(): [format: string, config: any][] {
     return [];
   }
 }
