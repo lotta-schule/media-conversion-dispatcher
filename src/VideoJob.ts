@@ -35,13 +35,19 @@ export class VideoJob extends TranscodingJob {
         'video/webm',
         FileModelType.Video
       ),
-      this.createOutput('gif:500px', '.gif', 'image/gif', FileModelType.Image),
       this.createOutput(
-        'storyboard:1200px',
-        '.png',
-        'image/png',
+        'webp_anim:500x',
+        '.webp',
+        'image/webp',
         FileModelType.Image
       ),
+      this.createOutput(
+        'webp:1200x',
+        '.webp',
+        'image/webp',
+        FileModelType.Image
+      ),
+      this.createOutput('jpg:800x', '.jpg', 'image/jpg', FileModelType.Image),
     ];
   }
 }
