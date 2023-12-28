@@ -4,11 +4,6 @@ import { FileModel, FileModelType } from './model/FileModel';
 
 const coconut = new Coconut.Client(process.env.COCONUT_API_KEY);
 
-const AWS_HOST = process.env.AWS_S3_ENDPOINT.replace('https://', '').replace(
-  `${process.env.AWS_S3_BUCKET}.`,
-  ''
-);
-
 coconut.notification = {
   type: 'http',
   url: 'https://app.coconut.co/tools/webhooks/58aee6d0/einsa',
@@ -18,22 +13,20 @@ coconut.storage = {
   service: 's3other',
   region: process.env.AWS_S3_REGION,
   bucket: process.env.AWS_S3_BUCKET,
-  endpoint: `https://${AWS_HOST}`,
+  endpoint: process.env.AWS_S3_ENDPOINT,
   credentials: {
     access_key_id: process.env.AWS_ACCESS_KEY_ID,
     secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
   },
 };
 
-export type TranscodingJobOutput = Record<
-  string,
-  {
-    path: string;
-    mimeType: string;
-    fileType: FileModelType;
-    metadata?: any;
-  }
->;
+export type TranscodingJobOutput = {
+  format: string;
+  path: string;
+  mimeType: string;
+  fileType: FileModelType;
+  metadata?: any;
+};
 
 export class TranscodingJob {
   public static jobs: TranscodingJob[] = [];
@@ -54,7 +47,7 @@ export class TranscodingJob {
 
   public parentFile: FileModel;
 
-  public outputs: Record<string, any>;
+  public outputs: TranscodingJobOutput[];
 
   public metadata: any;
 
@@ -71,24 +64,17 @@ export class TranscodingJob {
   }
 
   public async startEncodingRequest(): Promise<any> {
-    this.outputs = Object.fromEntries(this.createOutputs());
-    const log = <T>(value: T): T => {
-      console.log('THIS IS WHAT WE PASS: ', value);
-      return value;
-    };
+    this.outputs = this.createOutputs();
     const job = await new Promise<any>((resolve, reject) => {
       coconut.Job.create(
-        log({
+        {
           input: {
             url: this.parentFile.remote_location,
           },
           outputs: Object.fromEntries(
-            Object.entries(this.outputs).map(([format, output]) => [
-              format,
-              { path: output.path },
-            ])
+            this.outputs.map(({ format, path }) => [format, { path }])
           ),
-        }),
+        },
         (job: any, err: Error) => {
           if (err) {
             reject(err);
@@ -109,16 +95,19 @@ export class TranscodingJob {
     outputs: { [format: string]: any };
     input: { stream: any; format: any };
   }): void {
-    console.log(metadata.outputs);
-    this.outputs = Object.fromEntries(
-      Object.entries(this.outputs).map(([format, output]) => ({
-        ...output,
-        metadata:
-          output.metadata || metadata.outputs[format]
-            ? { ...output.metadata, ...metadata.outputs[format] }
-            : undefined,
-      }))
-    );
+    this.outputs = this.outputs.map((output) => {
+      const formatMetadata = metadata.outputs.find(
+        (md: any) => md[output.format]
+      )?.[output.format];
+
+      if (formatMetadata) {
+        return {
+          ...output,
+          metadata: formatMetadata,
+        };
+      }
+      return output;
+    });
     this.metadata = metadata.input;
   }
 
@@ -140,7 +129,6 @@ export class TranscodingJob {
 
     if (job?.status === 'job.completed') {
       console.log('job completed: ', job);
-      console.log('will fetch job infos now');
       setTimeout(async () => {
         try {
           const { metadata } = await new Promise<any>((resolve, reject) => {
@@ -177,20 +165,20 @@ export class TranscodingJob {
     extension: string,
     mimeType: string,
     fileType: FileModelType
-  ): any {
-    const path = `${this.prefix}/${this.parentFile.id}/${uuid()}${extension}`;
+  ): TranscodingJobOutput {
+    const path = `${this.prefix}/${
+      this.parentFile.id
+    }-conversion/${uuid()}${extension}`;
 
-    return [
+    return {
       format,
-      {
-        fileType,
-        mimeType,
-        path,
-      },
-    ];
+      fileType,
+      mimeType,
+      path,
+    };
   }
 
-  protected createOutputs(): [format: string, config: any][] {
+  protected createOutputs(): TranscodingJobOutput[] {
     return [];
   }
 }
