@@ -4,6 +4,11 @@ import { FileModel, FileModelType } from './model/FileModel';
 
 const coconut = new Coconut.Client(process.env.COCONUT_API_KEY);
 
+const AWS_HOST = process.env.AWS_S3_ENDPOINT.replace('https://', '').replace(
+  `${process.env.AWS_S3_BUCKET}.`,
+  ''
+);
+
 coconut.notification = {
   type: 'http',
   url: 'https://app.coconut.co/tools/webhooks/58aee6d0/einsa',
@@ -13,7 +18,7 @@ coconut.storage = {
   service: 's3other',
   region: process.env.AWS_S3_REGION,
   bucket: process.env.AWS_S3_BUCKET,
-  endpoint: process.env.AWS_S3_ENDPOINT,
+  endpoint: `https://${AWS_HOST}`,
   credentials: {
     access_key_id: process.env.AWS_ACCESS_KEY_ID,
     secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
