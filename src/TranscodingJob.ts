@@ -1,5 +1,5 @@
 import Coconut from 'coconutjs';
-import { v1 as uuid } from 'uuid';
+import { v4 as uuid } from 'uuid';
 import { FileModel, FileModelType } from './model/FileModel';
 
 const coconut = new Coconut.Client(process.env.COCONUT_API_KEY);
